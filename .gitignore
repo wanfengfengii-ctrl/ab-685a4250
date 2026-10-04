@@ -2,7 +2,12 @@
 .env
 .venv/
 venv/
-node_modules/
+# Root-anchored so the vendored offline toolchain at tools/node_modules is
+# intentionally committed and Docker builds need no npm registry access.
+/node_modules/
+/dist/
+/data/
+*.log
 __pycache__/
 .pytest_cache/
 .mypy_cache/

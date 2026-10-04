@@ -1,0 +1,13 @@
+# The vendored build toolchain under tools/node_modules MUST stay in the
+# context (it makes the image build fully offline). Root-anchored patterns
+# below exclude only project-root-local artifacts.
+
+/node_modules/
+/dist/
+/data/
+/.git/
+/.gitignore
+/.env
+/*.log
+.DS_Store
+README.md

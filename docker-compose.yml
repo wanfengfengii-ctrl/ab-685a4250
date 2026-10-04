@@ -1,0 +1,62 @@
+# Pathology cross-institution manifest sharing service.
+#
+#   API host port is configurable via API_HOST_PORT (default 8080):
+#       API_HOST_PORT=9090 docker compose up --build
+#
+#   Run the one-shot verification gate (build + tests + live smoke) and let it
+#   exit with an aggregated status code:
+#       docker compose run --rm verify
+#   It is also started automatically by `docker compose up`, but only after
+#   the API passes its health check.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pathology-manifest-api:latest
+    container_name: pathology-manifest-api
+    environment:
+      # In-container listen port (fixed contract for the health check);
+      # the host-side mapping below is what deployments configure.
+      PORT: "3000"
+      MANIFEST_DATA_DIR: /data
+      # Uncomment (or export) to pin the alias master secret explicitly;
+      # otherwise a persistent random secret is generated once in the volume.
+      # MANIFEST_ALIAS_SECRET: "${MANIFEST_ALIAS_SECRET:-}"
+    ports:
+      - "${API_HOST_PORT:-8080}:3000"
+    volumes:
+      - manifest-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  verify:
+    image: pathology-manifest-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pathology-manifest-verify
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      BASE_URL: "http://api:3000"
+      PORT: "3000"
+    # One-shot: strict TypeScript build, node:test suite, submit/query smoke
+    # against the live API. Exits 0 only if all three pass (exit code is a
+    # bitmask: 1 build, 2 tests, 4 smoke).
+    entrypoint: ["node", "scripts/verify.mjs"]
+    restart: "no"
+
+volumes:
+  manifest-data:

@@ -1,0 +1,16 @@
+{
+  "name": "pathology-manifest-share",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cross-institution pathology manifest sharing service with identifier pseudonymization",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node tools/node_modules/typescript/bin/tsc -p tsconfig.json",
+    "test": "npm run build && node --test 'dist/test/'",
+    "smoke": "node scripts/smoke.mjs",
+    "start": "node dist/src/main.js"
+  }
+}
